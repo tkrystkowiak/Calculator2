@@ -15,7 +15,8 @@ public class Okno {
     private final char koma;
     private final char root;
     private char mathSymbol;
-    boolean isCalculating;
+    private boolean isCalculating;
+    private boolean isFormatAcceptable;
     private String screenText;
     private JFrame mainFrame;
     private ButtonListener listener;
@@ -52,6 +53,7 @@ public class Okno {
         warmYellow = new Color(241,216,79);
         middleGray = new Color(82,79,81);
         isCalculating = false;
+        isFormatAcceptable = true;
         koma = new Character('.');
         root = new Character('\u221A');
         screenList = new ArrayList<Character>();
@@ -188,17 +190,23 @@ public class Okno {
     }
 
     private double numberConversion(List<Character> lista){
-        StringBuilder builder = new StringBuilder(lista.size());
+        try{
+    	StringBuilder builder = new StringBuilder(lista.size());
         for(Character c: lista){
             builder.append(c);
         }
         String number = builder.toString();
         return Double.parseDouble(number);
+        }
+        catch(NumberFormatException e){
+        	isFormatAcceptable = false;
+        	return 0.0;
+        }
     }
 
-    public class ButtonListener implements ActionListener {
+    public class ButtonListener implements ActionListener  {
     	
-        public void actionPerformed(ActionEvent e) {
+        public void actionPerformed(ActionEvent e)  {
             screenText = screen.getText();
             JButton source = (JButton)e.getSource();
             if (source == b0){
@@ -271,75 +279,97 @@ public class Okno {
 
             }
             else if (source == bequals){
-                screen.setText(screenText+"=");
-                screenText = screen.getText();
-                for(char c: screenText.toCharArray()){
-                    screenList.add(c);
-                }
-                for(int i =0;i<screenList.size();i++){
-                    char a = screenList.get(i);
-                    if(Character.isDigit(a)||a==koma||a==root||a=='!'){
-                        if(isCalculating)
-                            n2List.add(a);
-                        else
-                            n1List.add(a);
-                    }
-                    else if(a=='+'||a=='-'||a=='*'||a=='/'){
-                        mathSymbol = a;
-                        isCalculating = true;
-                    }
-                    else if(a=='='){
-
-                        double number1 = 0;
-                        double number2 = 0;
-                        if(!n1List.isEmpty()) {
-                            if(n1List.get(0)==root){
-
-                                n1List.remove(0);
-                                double number1root = numberConversion(n1List);
-
-                                number1 = Calculation.Calculate(root,number1root,number2);
-                            }
-                            else if(n1List.get(n1List.size()-1)=='!'){
-                                n1List.remove(n1List.size()-1);
-                                double number1silnia = numberConversion(n1List);
-                                number1 = Calculation.Calculate('!',number1silnia,number2);
-                            }
-                            else {
-                                number1 = numberConversion(n1List);
-                            }
-
-                        }
-                        if(!n2List.isEmpty()) {
-                            if(n2List.get(0)==root){
-
-                                n2List.remove(0);
-                                double number1root = numberConversion(n2List);
-
-                                number2 = Calculation.Calculate(root,number1root,number2);
-                            }
-                            else if(n2List.get(n2List.size()-1)=='!'){
-                                n2List.remove(n2List.size()-1);
-                                double number1silnia = numberConversion(n2List);
-                                number2 = Calculation.Calculate('!',number1silnia,number2);
-                            }
-                            else {
-                                number2 = numberConversion(n2List);
-                            }
-                        }
-
-                        DecimalFormat df = new DecimalFormat("#.##");
-                        screen.setText(screenText+Calculation.round(Calculation.Calculate(mathSymbol,number1,number2),5));
-
-                        n1List.clear();
-                        n2List.clear();
-                        screenList.clear();
-                        mathSymbol = '0';
-                        isCalculating = false;
-
-                    }
-                }
+               
+            	try {
+					managingEquation();
+				} catch (InvalidFormatException e1) {
+					System.out.println("This code is reachable 2");
+					screen.setText("Error");
+	                n1List.clear();
+	                n2List.clear();
+	                screenList.clear();
+	                mathSymbol = '0';
+	                isCalculating = false;
+	                isFormatAcceptable = true;
+				}
             }
         }
     }
+    private void managingEquation() throws InvalidFormatException{
+    	screen.setText(screenText+"=");
+        screenText = screen.getText();
+        for(char c: screenText.toCharArray()){
+            screenList.add(c);
+        }
+        for(int i =0;i<screenList.size();i++){
+            char a = screenList.get(i);
+            if(Character.isDigit(a)||a==koma||a==root||a=='!'){
+                if(isCalculating)
+                    n2List.add(a);
+                else
+                    n1List.add(a);
+            }
+            else if(a=='+'||a=='-'||a=='*'||a=='/'){
+                mathSymbol = a;
+                isCalculating = true;
+            }
+            else if(a=='='){
+            	
+                double number1 = 0;
+                double number2 = 0;
+                if(!n1List.isEmpty()) {
+                    if(n1List.get(0)==root){
+
+                        n1List.remove(0);
+                        double number1root = numberConversion(n1List);
+                        number1 = Calculation.Calculate(root,number1root,number2);
+                    }
+                    else if(n1List.get(n1List.size()-1)=='!'){
+                        n1List.remove(n1List.size()-1);
+                        double number1silnia = numberConversion(n1List);
+                        number1 = Calculation.Calculate('!',number1silnia,number2);
+                    }
+                    else {
+                        number1 = numberConversion(n1List);
+                    }
+
+                }
+                if(!n2List.isEmpty()) {
+                    if(n2List.get(0)==root){
+
+                        n2List.remove(0);
+                        double number1root = numberConversion(n2List);
+
+                        number2 = Calculation.Calculate(root,number1root,number2);
+                    }
+                    else if(n2List.get(n2List.size()-1)=='!'){
+                        n2List.remove(n2List.size()-1);
+                        double number1silnia = numberConversion(n2List);
+                        number2 = Calculation.Calculate('!',number1silnia,number2);
+                    }
+                    else {
+                        number2 = numberConversion(n2List);
+                    }
+                }
+
+                if(isFormatAcceptable==false){
+                	throw new InvalidFormatException();
+                }
+                else{
+                screen.setText(screenText+Calculation.round(Calculation.Calculate(mathSymbol,number1,number2),5));
+                }
+            
+                n1List.clear();
+                n2List.clear();
+                screenList.clear();
+                mathSymbol = '0';
+                isCalculating = false;
+                isFormatAcceptable = true;
+
+            }
+           
+        }
+        
+    }
 }
+	
